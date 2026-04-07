@@ -1,0 +1,42 @@
+{
+  "entities": {
+    "Student": {
+      "title": "Student",
+      "description": "A student account with balance and identification details.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Full name of the student" },
+        "section": { "type": "string", "description": "Class section" },
+        "rollNumber": { "type": "string", "description": "Roll number" },
+        "accountNumber": { "type": "string", "description": "Unique account number" },
+        "balance": { "type": "number", "description": "Current account balance" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Account creation date" }
+      },
+      "required": ["name", "section", "rollNumber", "accountNumber", "balance", "createdAt"]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "description": "A record of money in or out of a student account.",
+      "type": "object",
+      "properties": {
+        "studentId": { "type": "string", "description": "Reference to the student document ID" },
+        "type": { "type": "string", "enum": ["deposit", "withdraw"], "description": "Type of transaction" },
+        "amount": { "type": "number", "description": "Amount of money" },
+        "date": { "type": "string", "format": "date-time", "description": "Transaction date" },
+        "remainingBalance": { "type": "number", "description": "Balance after this transaction" },
+        "description": { "type": "string", "description": "Optional note" }
+      },
+      "required": ["studentId", "type", "amount", "date", "remainingBalance"]
+    }
+  },
+  "firestore": {
+    "/students/{studentId}": {
+      "schema": "Student",
+      "description": "Collection of student accounts"
+    },
+    "/transactions/{transactionId}": {
+      "schema": "Transaction",
+      "description": "Log of all transactions"
+    }
+  }
+}

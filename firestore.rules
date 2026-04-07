@@ -1,0 +1,102 @@
+// ===============================================================
+// Assumed Data Model
+// ===============================================================
+//
+// Collection: students
+// Document ID: auto-generated
+// Fields:
+//   - name: string (required)
+//   - section: string (required)
+//   - rollNumber: string (required)
+//   - accountNumber: string (required, unique)
+//   - balance: number (required)
+//   - createdAt: timestamp (required)
+//
+// Collection: transactions
+// Document ID: auto-generated
+// Fields:
+//   - studentId: string (required)
+//   - type: string (required, 'deposit' | 'withdraw')
+//   - amount: number (required, positive)
+//   - date: timestamp (required)
+//   - remainingBalance: number (required)
+//   - description: string (optional)
+//
+// ===============================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper Functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isValidStudent(data) {
+      return data.keys().hasAll(['name', 'section', 'rollNumber', 'accountNumber', 'balance']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.section is string && data.section.size() > 0 &&
+             data.rollNumber is string && data.rollNumber.size() > 0 &&
+             data.accountNumber is string && data.accountNumber.size() > 0 &&
+             data.balance is number &&
+             ( ! data.keys().hasAny(['dailyWithdrawLimit']) || data.dailyWithdrawLimit is number ) &&
+             ( ! data.keys().hasAny(['createdAt']) || data.createdAt is timestamp );
+    }
+
+    function isValidTransaction(data) {
+      return data.keys().hasAll(['studentId', 'type', 'amount', 'remainingBalance']) &&
+             data.studentId is string &&
+             data.type in ['deposit', 'withdraw'] &&
+             data.amount is number && data.amount > 0 &&
+             data.remainingBalance is number &&
+             ( ! data.keys().hasAny(['date']) || data.date is timestamp );
+    }
+
+    // User-scoped data: each user can only access their own data
+    match /users/{userId}/students/{studentId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidStudent(request.resource.data);
+      allow update: if isOwner(userId) && isValidStudent(request.resource.data);
+      allow delete: if isOwner(userId);
+    }
+
+    match /users/{userId}/transactions/{transactionId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidTransaction(request.resource.data);
+      allow update: if isOwner(userId) && isValidTransaction(request.resource.data);
+      allow delete: if isOwner(userId);
+    }
+  }
+}
+
+/*
+  DEV TROUBLESHOOTING NOTE
+
+  If you see "Missing or insufficient permissions" in the client when creating documents,
+  it's because your security rules are rejecting the write. Common causes:
+  - The client is not actually authenticated (anonymous sign-in not enabled).
+  - The request.resource.data doesn't satisfy the validation (e.g., missing fields or wrong types).
+
+  Quick temporary workaround (DEVELOPMENT ONLY):
+  Paste the following into the Firebase Console -> Firestore -> Rules and Save.
+  This will allow all reads/writes (do NOT use in production):
+
+  service cloud.firestore {
+    match /databases/{database}/documents {
+      match /{document=**} {
+        allow read, write: if true;
+      }
+    }
+  }
+
+  After confirming the app works, revert to stricter rules and enable Anonymous
+  sign-in (Firebase Console -> Authentication -> Sign-in method -> Anonymous).
+
+  To deploy rules from the CLI (if you have firebase-tools configured):
+    firebase deploy --only firestore:rules
+
+*/

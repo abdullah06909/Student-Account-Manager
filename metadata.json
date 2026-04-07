@@ -1,0 +1,5 @@
+{
+  "name": "Student Account Manager",
+  "description": "A mobile-friendly application to manage student accounts, track balances, and log transactions.",
+  "requestFramePermissions": []
+}
