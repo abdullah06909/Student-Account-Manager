@@ -519,7 +519,7 @@ export default function App() {
                     ) : (
                       <div className="p-12 text-center">
                         <History className="w-12 h-12 text-slate-200 mx-auto mb-4" />
-                        <p className="text-slate-500">No transactions yet.</p>
+                        <p className="text-slate-500">No transaction yet.</p>
                       </div>
                     )}
                   </div>
